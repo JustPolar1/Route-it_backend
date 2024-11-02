@@ -1,0 +1,17 @@
+{
+  "name": "utch-rutas",
+  "version": "1.0.0",
+  "description": "Este proyecto integrador para 3er cuatrimestre de la Universidad Tecnológica de Chihuahua tiene como propósito la visualización \r y manejo de quejas de las rutas de camiones de la UTCh mediante una página web.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "express": "^4.21.1",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.11.3"
+  }
+}
