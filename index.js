@@ -74,6 +74,14 @@ app.post("/auth/login", async (req, res) => {
     }
 });
 
+/**
+ * Ejemplo de solicitud
+ {
+    "email": "polar@gmail.com",
+    "password": "polar"
+}
+ */
+
 // Registro del usuario
 app.post('/auth/register', async (req, res) => {
     const { email, password } = req.body;
@@ -81,13 +89,22 @@ app.post('/auth/register', async (req, res) => {
     try {
         // Dentro del controlador del usuario se registra el usuario
         await userHandler.register(email, password);
-        res.redirect('/pages/login.html');
+
+        return res.status(201).redirect('/');
     } catch(error) {
         return res.status(error.status).send(error.message);
     }
 });
 
-app.use(isAuth); // Solo usuarios autenticados acceden a esta ruta
+/**
+ * Ejemplo de solicitud
+ {
+    "email": "polar@gmail.com",
+    "password": "polar"
+}
+ */
+
+app.use(isAuth); // Solo usuarios autenticados acceden a las siguientes rutas
 
 // Endpoints protegidos
 app.get("/", (req, res) => {
@@ -109,11 +126,21 @@ app.post("/queja", async (req, res) => {
 
     try {
         await userHandler.queja(req.user.userId, queja);
-        res.status(200).send("Queja registrada con éxito");
+        res.status(201).send("Queja registrada con éxito");
     } catch(error) {
         return res.status(error.status).send(error.message);
     }
 });
+
+/**
+ * Es importante aclarar que esta ruta necesita cookies con el token firmado de inicio de sesión
+ * que contenga el ID del usuario para funcionar
+ * Ejemplo de solicitud
+{
+	“ruta_id”: 4,
+	“comentario”: “La otra vez casi me tropiezo porque había un agujero en el camión”
+}
+ */
 
 app.get("/map", (req, res) => {
     return res.sendFile(path.resolve(__dirname, '../pages/map.html'));
