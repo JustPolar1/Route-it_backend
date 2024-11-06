@@ -7,6 +7,7 @@ const mysql = require("mysql2"); // Para la conexión a MySQL
 const jwt = require("jsonwebtoken"); // Para la lectura y verificación de tokens
 const cookieParser = require('cookie-parser'); // Para la lectura de tokens
 const UserHandler = require('./Handlers/UserHandler'); // El controlador de todo lo relacionado al usuario
+const { Console } = require('console');
 
 const SECRET_KEY = "Clave ultra secreta"; // Clave para firmar tokens
 
@@ -18,32 +19,41 @@ const connection = mysql.createConnection({
     // Acá pongan las credenciales que pusieron dentro de su Workbench para que
     // la api pueda acceder a la base de datos
 });
+
+
 // Se usan los módulos
 app.use(cookieParser());
 app.use(express.static(path.resolve(__dirname, '../'))); // Define el directorio base de los archivos estáticos
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Se usa para revisar si un usuario está autenticado
+function isAuth(req, res, next) {
+    const token = req.cookies.token;
+
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, SECRET_KEY);
+            // PUede ser útil por ejemplo para cargar la información del usuario
+            req.user = decoded; // Puedes almacenar la información decodificada del usuario en el request
+            
+            console.log(req.user);
+            return next(); // Continuamos con el siguiente middleware/controlador
+        } catch (error) {
+            // Estaría bueno hacer un control de cada excepción para dar más contexto al usuario
+            console.error('Token inválido:', error);
+            res.clearCookie('token');
+            return res.status(401).redirect("/pages/login.html");
+        }
+    } else {
+        return res.status(401).redirect("/pages/login.html"); // Redirige si no hay token
+    }
+}
+
 // Para manejar cuestiones del usuario se crea una instancia de usuario
 // únicamente pasamos la conexión, sus métodos contienen argumentos donde te pide diversa información
 // principalmente la ID del usuario en la base de datos
 const userHandler = new UserHandler(connection);
-
-// Endpoints
-app.get("/", (req, res) => {
-    const token = req.cookies.token;
-    // Si existe una sesión iniciada te mandará a la página de inicio
-    if (token) {
-        res.sendFile(path.resolve(__dirname, '../pages/index.html'));
-    } else {
-        // Caso contrario te manda al login, para que te logueees o te registres
-        res.sendFile(path.resolve(__dirname, '../pages/login.html'));
-/**
- * No sé cómo pero me gustaría que la página automáticamente te
- * restrinja el acceso a la página y te obligue a tener una cuenta activa
- */
-    }
-});
 
 app.post("/auth/login", async (req, res) => {
     const { email, password } = req.body;
@@ -51,22 +61,19 @@ app.post("/auth/login", async (req, res) => {
         const { token, userId } = await userHandler.login(email, password); // Se llama al método login de userHandler
         // En efecto, tengo que documentar todavía los métodos, aguántenme ;u;
         res.cookie('token', token, {
-            httpOnly: false, // En producción esto lo tenemos que cambiar a true
-            maxAge: 86400000 // Un día en milisegundos
+            httpOnly: false,  // Para que sea accesible en JavaScript (esto puede cambiar a true en producción)
+            maxAge: 86400000, // Expira en un día
         });
         // Si todo salió bien se guarda tu token y te redirije a la página principal
-        return res.redirect('/pages/index.html');
+        return res.redirect('/');
         // No hace falta mandar un status de que salió bien, es redundante
     } catch (error) {
+        console.log("Error de inicio de sesión:", error);
         // Sino entonces se manda el mensaje de error
         return res.status(error.status).send(error.message);
     }
 });
-// Esto se puede hacer en el cliente, aunque es divertido haberlo hecho en el back
-app.post('/auth/logout', (req, res) => {
-    res.clearCookie("token");
-    return res.redirect('/pages/login.html');
-});
+
 // Registro del usuario
 app.post('/auth/register', async (req, res) => {
     const { email, password } = req.body;
@@ -80,25 +87,40 @@ app.post('/auth/register', async (req, res) => {
     }
 });
 
+app.use(isAuth); // Solo usuarios autenticados acceden a esta ruta
+
+// Endpoints protegidos
+app.get("/", (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../pages/index.html'));
+});
+
+// Esto se puede hacer en el cliente, aunque es divertido haberlo hecho en el back
+app.post('/auth/logout', (req, res) => {
+    res.clearCookie("token");
+    return res.redirect('../pages/login.html');
+});
+
+app.get("/queja", (req, res) => {
+    return res.sendFile(path.resolve(__dirname, '../pages/quejas.html'));
+});
+
 app.post("/queja", async (req, res) => {
     const queja = req.body;
-    const token = req.cookies.token;
-    // Primero revisa si hay una sesión activa, así nos ahorramos algunos ataques
-    if (!token) {
-        return res.status(401).send("No estás autenticado");
-    }
 
     try {
-        // Se firma el token para verificarlo
-        const decodificado = jwt.verify(token, SECRET_KEY);
-        const user_id = decodificado.userId; // Se extrae el ID del usuario para hacer la consulta
-
-        await userHandler.queja(user_id, queja);
+        await userHandler.queja(req.user.userId, queja);
         res.status(200).send("Queja registrada con éxito");
     } catch(error) {
         return res.status(error.status).send(error.message);
     }
-    res.status
+});
+
+app.get("/map", (req, res) => {
+    return res.sendFile(path.resolve(__dirname, '../pages/map.html'));
+});
+
+app.get("/perfil", (req, res) => {
+    return res.sendFile(path.resolve(__dirname, '../pages/perfil.html'));
 });
 
 app.get("/rutas", (req, res) => {
