@@ -7,7 +7,8 @@ const mysql = require("mysql2"); // Para la conexión a MySQL
 const jwt = require("jsonwebtoken"); // Para la lectura y verificación de tokens
 const cookieParser = require('cookie-parser'); // Para la lectura de tokens
 const UserHandler = require('./Handlers/UserHandler'); // El controlador de todo lo relacionado al usuario
-const { Console } = require('console');
+const { Console, error } = require('console');
+const { resourceLimits } = require('worker_threads');
 
 const SECRET_KEY = "Clave ultra secreta"; // Clave para firmar tokens
 
@@ -151,7 +152,23 @@ app.get("/perfil", (req, res) => {
 });
 
 app.get("/rutas", (req, res) => {
-    // Implementación pendiente, aquí debería ir todo lo relacionado a la obtención de información de las rutas
+    const query = "SELECT * FROM rutas";
+    connection.query(query, (error, results) => {
+        if (error) {
+            return res.status(500).json({ error: "Error en la consulta" });
+        }
+        return res.json(results);
+    });
+});
+
+app.get("/rutas/paradas", (req, res) => {
+    const query = "SELECT * FROM paradas";
+    connection.query(query, (error, results) => {
+        if (error) {
+            return res.status(500).json({ error: "Error en la consulta" });
+        }
+        return res.json(results);
+    });
 });
 
 app.listen(port, () => {
