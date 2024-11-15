@@ -152,6 +152,18 @@ app.get("/perfil", (req, res) => {
 });
 
 app.get("/rutas", (req, res) => {
+    if (req.query.ruta_id) {
+        const ruta_id = parseInt(req.query.ruta_id);
+
+        const query = "SELECT * FROM rutas WHERE ruta_id = ?";
+        connection.query(query, [ruta_id], (error, results) => {  // Pasa ruta_id dentro de un array
+            if (error) {
+                return res.status(500).json({ error: "Error en la consulta" });
+            }
+            return res.json(results);
+        });
+        return;
+    }
     const query = "SELECT * FROM rutas";
     connection.query(query, (error, results) => {
         if (error) {
