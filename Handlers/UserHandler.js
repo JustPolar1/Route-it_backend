@@ -65,6 +65,19 @@ class UserHandler {
             });
         });
     }
+    async verQueja(id_user) {
+        const query = "SELECT * FROM quejas WHERE fk_estudiante = (?)";
+
+        return new Promise((resolve, reject) => {
+            this.db.query(query, [id_user], (error, results) => {
+                if (error) {
+                    console.error('Error al insertar la queja:', error);
+                    return reject({ status: 500, message: "Error al registrar la queja" });
+                }
+                resolve(results);
+            });
+        });
+    }
 }
 
 module.exports = UserHandler;

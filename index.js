@@ -122,6 +122,24 @@ app.get("/queja", (req, res) => {
     return res.sendFile(path.resolve(__dirname, '../pages/quejas.html'));
 });
 
+app.get("/queja/user", async (req, res) => {
+    try {
+        const queja_info = userHandler.verQueja(req.user.userId); 
+        return res.json(queja_info);
+    } catch(error) {
+        return res.sendStatus(error.status);
+    }
+});
+
+/**
+ * Es importante aclarar que esta ruta necesita cookies con el token firmado de inicio de sesión
+ * que contenga el ID del usuario para funcionar
+ * Ejemplo de solicitud
+{
+    “ruta_id”: 4,
+    “comentario”: “La otra vez casi me tropiezo porque había un agujero en el camión”
+}
+ */
 app.post("/queja", async (req, res) => {
     const queja = req.body;
 
@@ -133,22 +151,22 @@ app.post("/queja", async (req, res) => {
     }
 });
 
-/**
- * Es importante aclarar que esta ruta necesita cookies con el token firmado de inicio de sesión
- * que contenga el ID del usuario para funcionar
- * Ejemplo de solicitud
-{
-	“ruta_id”: 4,
-	“comentario”: “La otra vez casi me tropiezo porque había un agujero en el camión”
-}
- */
-
 app.get("/map", (req, res) => {
     return res.sendFile(path.resolve(__dirname, '../pages/map.html'));
 });
 
 app.get("/perfil", (req, res) => {
-    return res.sendFile(path.resolve(__dirname, '../pages/perfil.html'));
+    return res.sendFile(path.resolve(__dirname, '../pages/profile.html'));
+});
+
+app.get("/perfil/info", (req, res) => {
+    const query = "SELECT * FROM estudiantes WHERE estudiante_id = (?)";
+    connection.query(query, [req.cookies.userId], (error, results) => {
+        if (error) {
+            return res.status(500).json({ error: "Error en la consulta" });
+        }
+        return res.json(results);
+    });
 });
 
 app.get("/rutas", (req, res) => {
