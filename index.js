@@ -124,7 +124,8 @@ app.get("/queja", (req, res) => {
 
 app.get("/queja/user", async (req, res) => {
     try {
-        const queja_info = userHandler.verQueja(req.user.userId); 
+        const queja_info = await userHandler.verQueja(req.user.userId); 
+        console.log(queja_info);
         return res.json(queja_info);
     } catch(error) {
         return res.sendStatus(error.status);
@@ -160,8 +161,13 @@ app.get("/perfil", (req, res) => {
 });
 
 app.get("/perfil/info", (req, res) => {
+    const userId = req.user.userId;
+    console.log(userId);
+    if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+    }
     const query = "SELECT * FROM estudiantes WHERE estudiante_id = (?)";
-    connection.query(query, [req.cookies.userId], (error, results) => {
+    connection.query(query, [userId], (error, results) => {
         if (error) {
             return res.status(500).json({ error: "Error en la consulta" });
         }

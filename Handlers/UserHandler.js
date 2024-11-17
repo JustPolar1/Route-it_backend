@@ -44,6 +44,20 @@ class UserHandler {
             });
         });
     }
+
+    async activar(nombre, organizacion) {
+        const query = `INSERT INTO cuenta_usuario(correo, contraseña) VALUES (?, ?)`;
+        return new Promise((resolve, reject) => {
+            this.db.query(query, [email, password], (error, results) => {
+                if (error) {
+                    console.error('Error al insertar el usuario:', error);
+                    return reject({ status: 500, message: "Error al registrar el usuario" });
+                }
+                console.log("Usuario registrado exitosamente:", email);
+                resolve(results);
+            });
+        });
+    }
 /**
  * La queja del usuario se va a conformar por dos parámetros, el id del usuario al que
  * pertenece la queja y los detalles de la queja en un JSON, tiene que contener
