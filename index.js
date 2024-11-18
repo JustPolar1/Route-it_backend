@@ -16,7 +16,7 @@ const connection = mysql.createConnection({
     host: "localhost",
     user: "root",
     password: "12345",
-    database: "rutas_utch"
+    database: "RouteIt"
     // Acá pongan las credenciales que pusieron dentro de su Workbench para que
     // la api pueda acceder a la base de datos
 });
@@ -29,19 +29,27 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Se usa para revisar si un usuario está autenticado
-function isAuth(req, res, next) {
+async function isAuth(req, res, next) {
     const token = req.cookies.token;
 
     if (token) {
         try {
             const decoded = jwt.verify(token, SECRET_KEY);
-            // PUede ser útil por ejemplo para cargar la información del usuario
-            req.user = decoded; // Puedes almacenar la información decodificada del usuario en el request
+            req.user = decoded; // Almacena el usuario decodificado en req.user
             
-            console.log(req.user);
-            return next(); // Continuamos con el siguiente middleware/controlador
+            // Permitir acceso a la ruta de activación sin verificar el estado de activación
+            if (req.originalUrl === "/activation") {
+                return next(); // Si es la ruta de activación, deja pasar
+            }
+
+            // Verifica si el usuario está activado para las demás rutas
+            const result = await userHandler.isActive(req.user.userId);
+            if (!result[0].usuario_estatus) {
+                return res.status(401).redirect("/activation"); // Redirigir si no está activado
+            }
+
+            next(); // Continuar con la ruta solicitada
         } catch (error) {
-            // Estaría bueno hacer un control de cada excepción para dar más contexto al usuario
             console.error('Token inválido:', error);
             res.clearCookie('token');
             return res.status(401).redirect("/pages/login.html");
@@ -50,6 +58,7 @@ function isAuth(req, res, next) {
         return res.status(401).redirect("/pages/login.html"); // Redirige si no hay token
     }
 }
+
 
 // Para manejar cuestiones del usuario se crea una instancia de usuario
 // únicamente pasamos la conexión, sus métodos contienen argumentos donde te pide diversa información
@@ -60,7 +69,6 @@ app.post("/auth/login", async (req, res) => {
     const { email, password } = req.body;
     try {
         const { token, userId } = await userHandler.login(email, password); // Se llama al método login de userHandler
-        // En efecto, tengo que documentar todavía los métodos, aguántenme ;u;
         res.cookie('token', token, {
             httpOnly: false,  // Para que sea accesible en JavaScript (esto puede cambiar a true en producción)
             maxAge: 86400000, // Expira en un día
@@ -97,6 +105,36 @@ app.post('/auth/register', async (req, res) => {
     }
 });
 
+app.get("/activation", (req, res) => {
+    return res.sendFile(path.resolve(__dirname, '../pages/activation.html'));
+});
+
+app.get("/organizaciones", (req, res) => {
+    if (req.query.organizacion_id) {
+        const organizacion_id = req.query.organizacion_id;
+
+        const query = "SELECT * FROM organizaciones WHERE organizacion_id = ?";
+        connection.query(query, [organizacion_id], (error, results) => {  
+            if (error) {
+                return res.status(500).json({ error: "Error en la consulta" });
+            }
+            if (results.length === 0) {
+                return res.status(404).json({ error: "Organización no encontrada" });
+            }
+            return res.json(results); // Cambié 'ruta' por 'results'
+        });
+        return;
+    }
+
+    const query = "SELECT * FROM organizaciones";
+    connection.query(query, (error, results) => {
+        if (error) {
+            return res.status(500).json({ error: "Error en la consulta" });
+        }
+        return res.json(results); // Enviar los resultados aquí también
+    });
+});
+
 /**
  * Ejemplo de solicitud
  {
@@ -110,6 +148,29 @@ app.use(isAuth); // Solo usuarios autenticados acceden a las siguientes rutas
 // Endpoints protegidos
 app.get("/", (req, res) => {
     res.sendFile(path.resolve(__dirname, '../pages/index.html'));
+});
+
+app.post("/activation", async (req, res) => {
+    const perfil_info = req.body;
+    const { organizacion, nombre } = perfil_info;
+
+    console.log(req.user)
+
+    // Verifica si los campos necesarios están presentes
+    if (!organizacion || !nombre) {
+        return res.status(400).send("Faltan datos necesarios para la activación");
+    }
+
+    try {
+        // Llama a la función activar con los datos del perfil
+        await userHandler.activar(req.user.userId, organizacion, nombre);
+        return res.status(201).send("Cuenta activada con éxito");
+    } catch (error) {
+        // Manejo adecuado de errores
+        const statusCode = error.status || 500; // Si no hay status, devuelve un 500
+        const errorMessage = error.message || "Ocurrió un error inesperado"; // Mensaje por defecto
+        return res.status(statusCode).send(errorMessage);
+    }
 });
 
 // Esto se puede hacer en el cliente, aunque es divertido haberlo hecho en el back
@@ -166,7 +227,7 @@ app.get("/perfil/info", (req, res) => {
     if (!userId) {
         return res.status(401).json({ error: "Usuario no autenticado" });
     }
-    const query = "SELECT * FROM estudiantes WHERE estudiante_id = (?)";
+    const query = "SELECT * FROM perfiles WHERE perfil_id = (?)";
     connection.query(query, [userId], (error, results) => {
         if (error) {
             return res.status(500).json({ error: "Error en la consulta" });
@@ -177,14 +238,21 @@ app.get("/perfil/info", (req, res) => {
 
 app.get("/rutas", (req, res) => {
     if (req.query.ruta_id) {
-        const ruta_id = parseInt(req.query.ruta_id);
+        const ruta_id = req.query.ruta_id;
 
         const query = "SELECT * FROM rutas WHERE ruta_id = ?";
-        connection.query(query, [ruta_id], (error, results) => {  // Pasa ruta_id dentro de un array
+        connection.query(query, [ruta_id], (error, results) => {  
             if (error) {
                 return res.status(500).json({ error: "Error en la consulta" });
             }
-            return res.json(results);
+            if (results.length === 0) {
+                return res.status(404).json({ error: "Ruta no encontrada" });
+            }
+            const ruta = results[0];
+            // Seleccionar idioma
+            ruta.ruta_nombre = ruta.ruta_nombre.es; // Cambia 'es' por 'en' para inglés
+            ruta.ruta_descripcion = ruta.ruta_descripcion.es; // Similar con descripción
+            return res.json(ruta);
         });
         return;
     }
@@ -193,6 +261,11 @@ app.get("/rutas", (req, res) => {
         if (error) {
             return res.status(500).json({ error: "Error en la consulta" });
         }
+        results.forEach(ruta => {
+            // Ajustar campos según idioma
+            ruta.ruta_nombre = ruta.ruta_nombre.es; // Cambia 'es' por 'en' para inglés
+            ruta.ruta_descripcion = ruta.ruta_descripcion.es; // Similar con descripción
+        });
         return res.json(results);
     });
 });
@@ -206,6 +279,7 @@ app.get("/rutas/paradas", (req, res) => {
         return res.json(results);
     });
 });
+
 
 app.listen(port, () => {
     console.log("Aplicación abierta en: http://localhost:" + port);
