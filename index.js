@@ -223,11 +223,7 @@ app.get("/perfil", (req, res) => {
 
 app.get("/perfil/info", (req, res) => {
     const userId = req.user.userId;
-    console.log(userId);
-    if (!userId) {
-        return res.status(401).json({ error: "Usuario no autenticado" });
-    }
-    const query = "SELECT * FROM perfiles WHERE perfil_id = (?)";
+    const query = "SELECT * FROM perfiles WHERE usuario_fk = ?";
     connection.query(query, [userId], (error, results) => {
         if (error) {
             return res.status(500).json({ error: "Error en la consulta" });
