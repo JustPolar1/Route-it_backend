@@ -52,10 +52,10 @@ async function isAuth(req, res, next) {
         } catch (error) {
             console.error('Token inválido:', error);
             res.clearCookie('token');
-            return res.status(401).redirect("/pages/login.html");
+            return res.status(401).redirect("/about");
         }
     } else {
-        return res.status(401).redirect("/pages/login.html"); // Redirige si no hay token
+        return res.status(401).redirect("/about"); // Redirige si no hay token
     }
 }
 
@@ -142,6 +142,11 @@ app.get("/organizaciones", (req, res) => {
     "password": "polar"
 }
  */
+
+// Endpoints protegidos
+app.get("/about", (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../pages/about.html'));
+});
 
 app.use(isAuth); // Solo usuarios autenticados acceden a las siguientes rutas
 
@@ -246,8 +251,8 @@ app.get("/rutas", (req, res) => {
             }
             const ruta = results[0];
             // Seleccionar idioma
-            ruta.ruta_nombre = ruta.ruta_nombre.es; // Cambia 'es' por 'en' para inglés
-            ruta.ruta_descripcion = ruta.ruta_descripcion.es; // Similar con descripción
+            ruta.ruta_nombre = ruta.ruta_nombre.en; // Cambia 'es' por 'en' para inglés
+            ruta.ruta_descripcion = ruta.ruta_descripcion.en; // Similar con descripción
             return res.json(ruta);
         });
         return;
@@ -259,8 +264,8 @@ app.get("/rutas", (req, res) => {
         }
         results.forEach(ruta => {
             // Ajustar campos según idioma
-            ruta.ruta_nombre = ruta.ruta_nombre.es; // Cambia 'es' por 'en' para inglés
-            ruta.ruta_descripcion = ruta.ruta_descripcion.es; // Similar con descripción
+            ruta.ruta_nombre = ruta.ruta_nombre.en; // Cambia 'es' por 'en' para inglés
+            ruta.ruta_descripcion = ruta.ruta_descripcion.en; // Similar con descripción
         });
         return res.json(results);
     });
