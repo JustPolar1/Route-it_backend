@@ -1,6 +1,6 @@
 # API del proyecto Route-It
 
-## Tabla de Contenidos
+## Tabla de Contenido
 - [Descripción](#descripción)
 - [Instalación](#instalación)
 - [Configuración](#configuración)
@@ -15,7 +15,7 @@ Route-It que permite el registro y manejo de los usuarios, obtención
 de información de las rutas que deriva de la base de datos,
 obtención de información de las paradas, publicación de quejas hacia 
 diferentes rutas.
-Nuestra API también contiene un mecanismos que protegen las rutas
+Nuestra API también contiene mecanismos que protegen las rutas
 para que nadie más que usuarios autenticados puedan acceder a estas
 rutas.
 
