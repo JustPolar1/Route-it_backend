@@ -221,7 +221,7 @@ Se obtendrá la información del perfil asociado a la cuenta actual.
 ### GET /organizaciones
 
 #### Respuesta:
-Se obtendrá la información relacionada a las organizaciones.
+Se obtendrá la información relacionada a las organizaciones.
 
 Útil a la hora de elegir tu organización cuando activas tu perfil.
 ``` JSON
