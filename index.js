@@ -99,7 +99,7 @@ app.post('/auth/register', async (req, res) => {
         // Dentro del controlador del usuario se registra el usuario
         await userHandler.register(email, password);
 
-        return res.status(201).redirect('/');
+        return res.sendFile(path.resolve(__dirname, '../pages/login.html'));
     } catch(error) {
         return res.status(error.status).send(error.message);
     }
@@ -169,7 +169,7 @@ app.post("/activation", async (req, res) => {
     try {
         // Llama a la función activar con los datos del perfil
         await userHandler.activar(req.user.userId, organizacion, nombre);
-        return res.status(201).send("Cuenta activada con éxito");
+        return res.status(201).redirect("/");
     } catch (error) {
         // Manejo adecuado de errores
         const statusCode = error.status || 500; // Si no hay status, devuelve un 500
