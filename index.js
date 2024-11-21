@@ -209,13 +209,19 @@ app.get("/queja/user", async (req, res) => {
  */
 app.post("/queja", async (req, res) => {
     const queja = req.body;
-
-    try {
-        await userHandler.queja(req.user.userId, queja);
-        res.status(201).redirect("/");
-    } catch(error) {
-        return res.status(error.status).send(error.message);
-    }
+    const query = "SELECT * FROM perfiles WHERE usuario_fk = ?";
+    connection.query(query, [req.user.userId], async (error, results) => {
+        if (error) {
+            return res.status(500).json({ error: "Error en la consulta" });
+        }
+        try {
+            console.log(results);
+            await userHandler.queja(results[0].perfil_id, queja);
+            res.status(201).redirect("/");
+        } catch(error) {
+            return res.status(error.status).send(error.message);
+        }
+    });
 });
 
 app.get("/map", (req, res) => {
