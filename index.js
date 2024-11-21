@@ -212,7 +212,7 @@ app.post("/queja", async (req, res) => {
 
     try {
         await userHandler.queja(req.user.userId, queja);
-        res.status(201).send("Queja registrada con éxito");
+        res.status(201).redirect("/");
     } catch(error) {
         return res.status(error.status).send(error.message);
     }
@@ -238,6 +238,17 @@ app.get("/perfil/info", (req, res) => {
 });
 
 app.get("/rutas", (req, res) => {
+    var lang = "";
+    console.log(lang);
+    if (req.query.lang){
+        const lenguajeSolicitado = req.query.lang;
+        if (lenguajeSolicitado === "es" || lenguajeSolicitado === "en"){
+            lang = req.query.lang;
+        }
+    } 
+    // Si lang sigue vacío, se obtiene del encabezado o se usa el valor predeterminado
+    lang = lang || req.headers["accept-language"]?.split(",")[0].split("-")[0] || "es";
+
     if (req.query.ruta_id) {
         const ruta_id = req.query.ruta_id;
 
@@ -251,8 +262,8 @@ app.get("/rutas", (req, res) => {
             }
             const ruta = results[0];
             // Seleccionar idioma
-            ruta.ruta_nombre = ruta.ruta_nombre.en; // Cambia 'es' por 'en' para inglés
-            ruta.ruta_descripcion = ruta.ruta_descripcion.en; // Similar con descripción
+            ruta.ruta_nombre = ruta.ruta_nombre[lang]; // Cambia 'es' por 'en' para inglés
+            ruta.ruta_descripcion = ruta.ruta_descripcion[lang]; // Similar con descripción
             return res.json(ruta);
         });
         return;
@@ -264,8 +275,8 @@ app.get("/rutas", (req, res) => {
         }
         results.forEach(ruta => {
             // Ajustar campos según idioma
-            ruta.ruta_nombre = ruta.ruta_nombre.en; // Cambia 'es' por 'en' para inglés
-            ruta.ruta_descripcion = ruta.ruta_descripcion.en; // Similar con descripción
+            ruta.ruta_nombre = ruta.ruta_nombre[lang]; // Cambia 'es' por 'en' para inglés
+            ruta.ruta_descripcion = ruta.ruta_descripcion[lang]; // Similar con descripción
         });
         return res.json(results);
     });
