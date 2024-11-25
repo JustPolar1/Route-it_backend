@@ -246,7 +246,6 @@ app.get("/perfil/info", (req, res) => {
 
 app.get("/rutas", (req, res) => {
     var lang = "";
-    console.log(lang);
     if (req.query.lang){
         const lenguajeSolicitado = req.query.lang;
         if (lenguajeSolicitado === "es" || lenguajeSolicitado === "en"){
@@ -275,8 +274,8 @@ app.get("/rutas", (req, res) => {
         });
         return;
     }
-    const query = "SELECT * FROM rutas";
-    connection.query(query, (error, results) => {
+    const query = "SELECT * FROM rutas WHERE organizacion_fk = (SELECT organizacion_fk FROM perfiles WHERE usuario_fk = ?)";
+    connection.query(query, [req.user.userId], (error, results) => {
         if (error) {
             return res.status(500).json({ error: "Error en la consulta" });
         }
@@ -290,8 +289,16 @@ app.get("/rutas", (req, res) => {
 });
 
 app.get("/rutas/paradas", (req, res) => {
-    const query = "SELECT * FROM paradas";
-    connection.query(query, (error, results) => {
+    const query = `
+    SELECT p.*
+    FROM 
+        paradas p
+    JOIN 
+        rutas r ON p.ruta_fk = r.ruta_id
+    WHERE 
+        r.organizacion_fk = (SELECT organizacion_fk FROM perfiles WHERE usuario_fk = ?);
+`;
+    connection.query(query, [req.user.userId], (error, results) => {
         if (error) {
             return res.status(500).json({ error: "Error en la consulta" });
         }
