@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const path = require('path');
 const port = 3000;
+const address = "192.168.0.85"
 
 const mysql = require("mysql2"); // Para la conexión a MySQL
 const jwt = require("jsonwebtoken"); // Para la lectura y verificación de tokens
@@ -299,6 +300,6 @@ app.get("/rutas/paradas", (req, res) => {
 });
 
 
-app.listen(port, () => {
-    console.log("Aplicación abierta en: http://localhost:" + port);
+app.listen(port, address, () => {
+    console.log("Aplicación abierta en: http://" + address + ":" + port);
 });
