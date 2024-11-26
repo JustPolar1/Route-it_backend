@@ -13,15 +13,20 @@ const { resourceLimits } = require('worker_threads');
 
 const SECRET_KEY = "Clave ultra secreta"; // Clave para firmar tokens
 
-const connection = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "12345",
-    database: "RouteIt"
-    // Acá pongan las credenciales que pusieron dentro de su Workbench para que
-    // la api pueda acceder a la base de datos
-});
-
+const connections = {
+    usuario: mysql.createConnection({
+        host: "localhost",
+        user: "usuario_cliente",
+        password: "fibo1123581321nacci",
+        database: "RouteIt"
+    }),
+    administrador: mysql.createConnection({
+        host: "localhost",
+        user: "admin_cliente",
+        password: "fibo1123581321nacci",
+        database: "RouteIt"
+    })
+};
 
 // Se usan los módulos
 app.use(cookieParser());
@@ -64,7 +69,7 @@ async function isAuth(req, res, next) {
 // Para manejar cuestiones del usuario se crea una instancia de usuario
 // únicamente pasamos la conexión, sus métodos contienen argumentos donde te pide diversa información
 // principalmente la ID del usuario en la base de datos
-const userHandler = new UserHandler(connection);
+const userHandler = new UserHandler(connections['usuario']);
 
 app.post("/auth/login", async (req, res) => {
     const { email, password } = req.body;
@@ -115,7 +120,7 @@ app.get("/organizaciones", (req, res) => {
         const organizacion_id = req.query.organizacion_id;
 
         const query = "SELECT * FROM organizaciones WHERE organizacion_id = ?";
-        connection.query(query, [organizacion_id], (error, results) => {  
+        connections['administrador'].query(query, [organizacion_id], (error, results) => {  
             if (error) {
                 return res.status(500).json({ error: "Error en la consulta" });
             }
@@ -128,7 +133,7 @@ app.get("/organizaciones", (req, res) => {
     }
 
     const query = "SELECT * FROM organizaciones";
-    connection.query(query, (error, results) => {
+    connections['administrador'].query(query, (error, results) => {
         if (error) {
             return res.status(500).json({ error: "Error en la consulta" });
         }
@@ -236,7 +241,7 @@ app.get("/perfil", (req, res) => {
 app.get("/perfil/info", (req, res) => {
     const userId = req.user.userId;
     const query = "SELECT * FROM perfiles WHERE usuario_fk = ?";
-    connection.query(query, [userId], (error, results) => {
+    connections['usuario'].query(query, [userId], (error, results) => {
         if (error) {
             return res.status(500).json({ error: "Error en la consulta" });
         }
@@ -259,7 +264,7 @@ app.get("/rutas", (req, res) => {
         const ruta_id = req.query.ruta_id;
 
         const query = "SELECT * FROM rutas WHERE ruta_id = ?";
-        connection.query(query, [ruta_id], (error, results) => {  
+        connections['usuario'].query(query, [ruta_id], (error, results) => {  
             if (error) {
                 return res.status(500).json({ error: "Error en la consulta" });
             }
@@ -275,7 +280,7 @@ app.get("/rutas", (req, res) => {
         return;
     }
     const query = "SELECT * FROM rutas WHERE organizacion_fk = (SELECT organizacion_fk FROM perfiles WHERE usuario_fk = ?)";
-    connection.query(query, [req.user.userId], (error, results) => {
+    connection['usuario'].query(query, [req.user.userId], (error, results) => {
         if (error) {
             return res.status(500).json({ error: "Error en la consulta" });
         }
@@ -298,7 +303,7 @@ app.get("/rutas/paradas", (req, res) => {
     WHERE 
         r.organizacion_fk = (SELECT organizacion_fk FROM perfiles WHERE usuario_fk = ?);
 `;
-    connection.query(query, [req.user.userId], (error, results) => {
+    connections['usuario'].query(query, [req.user.userId], (error, results) => {
         if (error) {
             return res.status(500).json({ error: "Error en la consulta" });
         }
