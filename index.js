@@ -216,7 +216,7 @@ app.get("/queja/user", async (req, res) => {
 app.post("/queja", async (req, res) => {
     const queja = req.body;
     const query = "SELECT * FROM perfiles WHERE usuario_fk = ?";
-    connection.query(query, [req.user.userId], async (error, results) => {
+    connections['usuario'].query(query, [req.user.userId], async (error, results) => {
         if (error) {
             return res.status(500).json({ error: "Error en la consulta" });
         }
@@ -280,7 +280,7 @@ app.get("/rutas", (req, res) => {
         return;
     }
     const query = "SELECT * FROM rutas WHERE organizacion_fk = (SELECT organizacion_fk FROM perfiles WHERE usuario_fk = ?)";
-    connection['usuario'].query(query, [req.user.userId], (error, results) => {
+    connections['usuario'].query(query, [req.user.userId], (error, results) => {
         if (error) {
             return res.status(500).json({ error: "Error en la consulta" });
         }
