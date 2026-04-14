@@ -10,6 +10,8 @@ const cookieParser = require('cookie-parser'); // Para la lectura de tokens
 const UserHandler = require('./Handlers/UserHandler'); // El controlador de todo lo relacionado al usuario
 const { Console, error } = require('console');
 const { resourceLimits } = require('worker_threads');
+const https = require('https');
+const fs = require('fs');
 
 const SECRET_KEY = "Clave ultra secreta"; // Clave para firmar tokens
 
@@ -312,6 +314,9 @@ app.get("/rutas/paradas", (req, res) => {
 });
 
 
-app.listen(port, address, () => {
-    console.log("Aplicación abierta en: http://" + address + ":" + port);
+https.createServer({
+    key: fs.readFileSync('key.pem'),
+    cert: fs.readFileSync('cert.pem')
+}, app).listen(port, address, () => {
+    console.log("Aplicación abierta en: https://" + address + ":" + port);
 });
