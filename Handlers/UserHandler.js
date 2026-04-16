@@ -12,6 +12,25 @@ class UserHandler {
         this.db = db;
     }
 
+    // Validar formato de email
+    isValidEmail(email) {
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return regex.test(email);
+    }
+
+    // Validar celular (10 dígitos)
+    isValidPhone(phone) {
+        const regex = /^\d{10}$/;
+        return regex.test(phone);
+    }
+
+    // Validar contraseña
+    // Mínimo 10 caracteres, al menos 1 número, 1 especial, 1 mayúscula, 1 minúscula
+    isValidPassword(password) {
+        const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{10,}$/;
+        return regex.test(password);
+    }
+
     async login(email, password) {
         const query = 'SELECT usuario_id FROM usuarios WHERE usuario_correo = ? AND usuario_contraseña = SHA2(?, 256)';
         
@@ -33,7 +52,35 @@ class UserHandler {
         });
     }
 
-    async register(email, password) {
+    async register(contacto, password) {
+        // Validar que los campos no estén vacíos
+        if (!contacto || !password) {
+            return Promise.reject({ status: 400, message: "El email/celular y la contraseña no deben estar vacíos" });
+        }
+
+        // Detectar si es email o celular
+        const isEmail = this.isValidEmail(contacto);
+        const isPhone = this.isValidPhone(contacto);
+
+        if (!isEmail && !isPhone) {
+            return Promise.reject({ 
+                status: 400, 
+                message: "Ingrese un email válido o un celular de 10 dígitos" 
+            });
+        }
+
+        // Validar contraseña
+        if (!this.isValidPassword(password)) {
+            return Promise.reject({ 
+                status: 400, 
+                message: "La contraseña debe tener: mínimo 10 caracteres, al menos una mayúscula, una minúscula, un número y un carácter especial" 
+            });
+        }
+
+        // Si es email, usarlo como email. Si es celular, generar un email temporal
+        const email = isEmail ? contacto : `${contacto}@routeit.local`;
+        const phone = isPhone ? contacto : null;
+
         const query = `CALL registrar_usuario(?, ?)`;
         return new Promise((resolve, reject) => {
             this.db.query(query, [email, password], (error, results) => {

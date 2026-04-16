@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const path = require('path');
 const port = 3000;
-const address = "10.1.124.109";
+const address = "localhost";
 
 const mysql = require("mysql2"); // Para la conexión a MySQL
 const jwt = require("jsonwebtoken"); // Para la lectura y verificación de tokens
